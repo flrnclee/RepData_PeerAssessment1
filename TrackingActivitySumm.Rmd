@@ -1,0 +1,30 @@
+##Tracking Activity Using A Monitoring Device
+<p style="font-size: 13pt; line-height:18pt"> 
+**Author:** Florence Lee<br>
+**Date:** 02-15-2015<br>
+**Assignment:** RepData_PeerAssessment1</p>
+
+====
+
+###Introduction
+The purpose of this assignment is to explore data from a personal activity
+monitoring device. The device collects step data every 5 minutes. This dataset 
+contains data from October 2012 to November 2012. 
+
+###Unzip and Read Dataset
+After forking the RepData_PeerAssessment1 folder from Github, unzip ```activity.zip```, 
+which contains the .csv file with the data. Make sure the working directory
+is set to the forked repo.
+
+```{r}
+unzip("activity.zip") 
+activity <- read.csv("activity.csv")
+```
+
+###Explore the Dataset
+The first order of business is to explore the dataset. This can be done using 
+```str```.
+
+```{r}
+str(activity)
+```
