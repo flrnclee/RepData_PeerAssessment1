@@ -8,23 +8,203 @@
 
 ###Introduction
 The purpose of this assignment is to explore data from a personal activity
-monitoring device. The device collects step data every 5 minutes. This dataset 
-contains data from October 2012 to November 2012. 
+monitoring device. The device collects step data every 5 minutes, and this 
+dataset only captures data from 10-01-2012 to 11-30-2012.
 
 ###Unzip and Read Dataset
-After forking the RepData_PeerAssessment1 folder from Github, unzip ```activity.zip```, 
-which contains the .csv file with the data. Make sure the working directory
-is set to the forked repo.
+After forking the RepData_PeerAssessment1 folder from Github, set the working 
+directory to the forked repo ```RepData_PeerAssessment1```. Unzip ```activity.zip```, 
+which contains the .csv file with the data, and read with ```read.csv()```. Here,
+I set the ```stringsAsFactor``` argument to ```FALSE``` because I want to read
+all character vector columns as characters and not factors for now.
 
 ```{r}
 unzip("activity.zip") 
-activity <- read.csv("activity.csv")
+activity <- read.csv("activity.csv", stringsAsFactor=FALSE)
 ```
 
-###Explore the Dataset
+###Explore & Clean the Dataset
 The first order of business is to explore the dataset. This can be done using 
 ```str```.
 
 ```{r}
 str(activity)
 ```
+
+The variables ```steps``` and ```interval``` are both integer values, which is
+what we want. ```date```, however, should be in a date format, so let's do that:
+
+```{r convertDate}
+activity$date <- as.Date(activity$date, "%Y-%m-%d")
+```
+
+If you run ```str(activity)``` again, you will see that ```date``` is now a 
+Date variable. 
+
+Additionally, we see that there are some NAs in ```steps```, which is a bit
+unusual. To see what's going on, we can see how many NAs there are for each date
+in the dataset. Here, we use ```dplyr``` to manipulate the dataset, but there
+are base R functions that can help you do the same things, too.
+
+```{r, message=FALSE} 
+library(dplyr)
+```
+
+```{r checkNAs}
+activity_na <- summarise(group_by(activity, date), total_NAs=sum(is.na(steps)))
+date_na <- activity_na[which(activity_na$total_NAs > 0),]
+date_na
+```
+
+There is missing data for 8 of the days, which can be due to a number of reasons,
+which we can only speculate. This is just good to keep in mind when we proceed
+with analysis.
+
+###What is the mean total number of steps taken per day?
+
+Let's take a look at the mean total number of steps taken per day. In order to
+do this calculation, we will need to:
+
+1. Calculate the total number of steps taken per day. 
+2. Make a histogram of the total number of steps taken per day. 
+3. Calculate the mean and median of the total number of steps taken per day. 
+
+**Total Number of Steps Taken Per Day**
+
+In order to do the calculation, we need to sum ```steps`` by ```date``` and 
+ignore all the ```NAs```. 
+
+```{r dayTotal}
+day_steps <- summarise(group_by(activity, date), 
+                       total_steps=sum(steps, na.rm=TRUE))
+day_steps
+```
+
+Because we ignored all the ```NAs``` the sum of steps for dates with no data 
+reads as 0. We can now use the ```total_steps``` column we created to create
+a histogram.
+
+**Distribution of Total Steps Taken Per Day**
+
+```{r dayTotalHist}
+hist(x = day_steps$total_steps, breaks = 10, 
+     xlab = "Total Steps Taken Per Day", 
+     ylim = c(0, 25), 
+     xlim = c(0, 25000),
+     main = "Total Steps Taken Per Day from October 2012 to November 2012")
+```
+
+The distribution of Total Steps Taken Per Day looks slightly left-skewed, so 
+we would expect to see the mean to the left of the median.
+
+**Mean and Median**
+
+We can calculate the mean and median of the distribution using the ```mean()```
+and ```median()``` functions. Be sure to ignore the ```NAs```.
+
+```{r avgTotalSteps} 
+mean(day_steps$total_steps, na.rm=TRUE)
+median(day_steps$total_steps, na.rm=TRUE)
+```
+
+####What is the average daily activity pattern?
+
+Average daily activity pattern can be captured by executing the following steps:
+
+1. Calculate average number of steps over each time interval.
+2. Graph a time series that captures average number of steps over time.
+
+**Average Number of Steps Over Time Interval**
+
+First, we want to group the data by ```interval``` and then calculate the mean
+number of steps through that interval.
+
+```{r intAvgSteps}
+int_steps <- summarise(group_by(activity, interval), 
+                       mean_steps=mean(steps, na.rm=TRUE))
+int_steps
+```
+
+**Time Series of Average Steps Over Time**
+
+The best way to visualize data over time is to create a time-series with time 
+on the x-axis. 
+
+```{r intAvgStepsLine}
+plot(x = int_steps$interval, y = int_steps$mean_steps, type = "l", 
+     xlab = "Time Interval (minutes)", 
+     ylab = "Average Number of Steps", 
+     main = "Average Number of Steps in a Day")
+```
+
+####Imputing missing values
+
+Previously, we had calculated to see how many NAs there were in the dataset for
+exploratory purposes. We will now impute reasonable values for missing data in 
+order to avoid systematic bias.
+
+**Total Number of Missing Values**
+
+First, let's see how many rows, or observations, in our dataset have ```NAs```. 
+This can be accomplished with the ```complete.cases()``` function.
+
+```{r completeCases}
+sum(!complete.cases(activity))
+```
+
+There are 2,304 observations that have NAs in our dataset. 
+
+**Imputing Values for Missing**
+
+As we saw previously, these missing values are concentrated in 8 days of data
+collection. For these days, data is missing for *all* 288 time intervals. Thus, 
+we can impute missing values using the average steps for each time interval. Our
+imputation datset will be ```int_steps``` and datasets of dates we want to 
+impute values for is ```date_na```. Both were previously created.
+
+```{r imputeVal}
+activity_nomiss <- activity
+for (i in date_na$date) {
+     activity_nomiss$steps[which(activity_nomiss$date==i)] <- int_steps$mean_steps
+}
+```
+
+If we run a quick count of missing ```steps``` values in ```activity```, we see
+there are no observations with missing values in the new dataset ```activity_nomiss```.
+
+```{r completeCases2}
+sum(!complete.cases(activity_nomiss))
+```
+
+**Reevaluate Total Steps Taken Per Day**
+
+Now, we want to re-evaluate total steps taken per day by recreating the histogram
+and recalculating the mean and median.
+
+```{r dayTotal2}
+day_steps2 <- summarise(group_by(activity_nomiss, date), 
+                       total_steps=sum(steps, na.rm=TRUE))
+day_steps2
+```
+
+```{r dayTotalHist2}
+hist(x = day_steps2$total_steps, breaks = 10, 
+     xlab = "Total Steps Taken Per Day", 
+     ylim = c(0, 25), 
+     xlim = c(0, 25000),
+     main = "Total Steps Taken Per Day from October 2012 to November 2012")
+```
+
+```{r avgTotalSteps2} 
+mean(day_steps2$total_steps)
+median(day_steps2$total_steps)
+```
+
+If we impute missing values with the average number of steps for each 5-minute
+interval and redraw the distribution of total number of steps taken per day,
+the distribution becomes less skewed and more normal--drawing the mean closer 
+to the median. (We effectively shifted some of the values on the left tail
+closer to the middle.)
+
+####Comparing Weekday with Weekend Values
+
