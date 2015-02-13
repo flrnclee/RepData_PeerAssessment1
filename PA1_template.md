@@ -26,8 +26,8 @@ activity <- read.csv("activity.csv", stringsAsFactor=FALSE)
 ```
 
 ###Explore & Clean the Dataset
-The first order of business is to explore the dataset. This can be done using 
-```str```.
+The first order of business is to explore the dataset. This can be done using the
+```str``` function.
 
 
 ```r
