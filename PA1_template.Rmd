@@ -52,7 +52,7 @@ unusual. To see what's going on, we can see how many NAs there are for each date
 in the dataset. Here, we use ```dplyr``` to manipulate the dataset, but there
 are base R functions that can help you do the same things, too.
 
-```{r, message=FALSE} 
+```{r, message=FALSE}
 library(dplyr)
 ```
 
@@ -140,7 +140,7 @@ on the x-axis.
 plot(x = int_steps$interval, y = int_steps$mean_steps, type = "l", 
      xlab = "Time Interval (minutes)", 
      ylab = "Average Number of Steps", 
-     main = "Average Number of Steps in a Day")
+     main = "Average Number of Steps Throughout a Day")
 ```
 
 ####Imputing missing values
@@ -214,3 +214,58 @@ closer to the middle.)
 
 ####Comparing Weekday with Weekend Values
 
+If we are interested in comparing activity on the weekdays with activity on 
+the weekends, we will have to create a new column ```wkday``` that tracks whether
+the date is a weekday or a weekend. 
+
+```{r wkday}
+for (i in seq_along(activity_nomiss$date)) { 
+     if (weekdays(activity_nomiss$date[i]) %in% c("Sunday", "Saturday")) {
+          activity_nomiss$wkday[i] <- "Weekend"
+     }
+     else {
+          activity_nomiss$wkday[i] <- "Weekday"
+     }
+}
+```
+
+Because we want to later create a panel plot split by ```wkday```, we have to 
+make sure ```wkday``` is a factor variable.
+
+```{r}
+activity_nomiss$wkdy <- as.factor(activity_nomiss$wkday)
+str(activity_nomiss)
+```
+
+Now that we have a ```wkday``` variable, we want to create a dataset that 
+contains the average number of steps for each time interval-weekday pair. We can 
+use the ```summarise()``` function in the dplyr package as we did before, with 
+an additional ```group_by``` variable.
+
+```{r intAvgSteps2}
+int_steps2 <- summarise(group_by(activity_nomiss, interval, wkdy), 
+                        mean_steps=mean(steps, na.rm=TRUE))
+int_steps2
+```
+
+Now that we have our dataset, we can create our panel plot. The ```ggplot```
+package has a nice function for creating facet grids.
+
+```{r, message=FALSE} 
+library(ggplot2)
+```
+
+```{r intAvgStepsLine2}
+#Create base of the graph
+base <- ggplot(int_steps2, aes(x = interval, y = mean_steps)) + geom_line()
+#Create facet
+facet <- facet_grid(wkdy ~ .) 
+#Graph theme
+theme <- theme_bw()
+#Title and axis labels
+labels <- labs(title = "Average Number of Steps Throughout a Day", 
+               x = "Time Interval (minutes)", 
+               y = "Average Number of Steps")
+#Graph
+base + facet + labels + theme
+```
