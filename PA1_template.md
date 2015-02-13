@@ -444,7 +444,7 @@ base + facet + labels + theme
 Based on the graph, we see that there is a difference when comparing activity
 levels on the weekends with activity levels on the weekdays:
 
-* On the weekday, more steps can be observed during the early hours of the day, 
+* On the weekdays, more steps can be observed during the early hours of the day, 
 which might coincide with travel to work. 
 * On the weekends, more steps can be observed throughout the day and during the
 later hours of the day.
