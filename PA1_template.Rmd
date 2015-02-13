@@ -143,6 +143,17 @@ plot(x = int_steps$interval, y = int_steps$mean_steps, type = "l",
      main = "Average Number of Steps Throughout a Day")
 ```
 
+**Finding the Max Number of Average Steps**
+
+We can find the interval where the graph peaks by using the ```max()``` function:
+
+```{r intAvgStepsMax}
+int_steps$interval[which(int_steps$mean_steps==max(int_steps$mean_steps))]
+```
+
+The maximum number of steps can be found at time interval 835 (which corresponds
+to 8:35AM).
+
 ####Imputing missing values
 
 Previously, we had calculated to see how many NAs there were in the dataset for
